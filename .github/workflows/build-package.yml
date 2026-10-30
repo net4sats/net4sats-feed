@@ -24,8 +24,16 @@ jobs:
             BASE_VERSION="${GITHUB_REF_NAME#v}"
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             CHANNEL="stable"
-            BASE_VERSION=$(grep -m1 'PKG_VERSION:=' Makefile | sed 's/.*PKG_VERSION:=\([^)]*\).*/\1/')
-            [ -z "$BASE_VERSION" ] && BASE_VERSION="0.1.0"
+            # PACKAGE_VERSION is the version source of truth (single line).
+            # Do NOT grep the Makefile: it is an OpenWrt package makefile where
+            # PKG_VERSION is derived ($(shell ...)/$(DISPLAY_VERSION)) — grepping
+            # it yielded "$(shell sh \"$(PKG_MAKEFILE_DIR", whose unbalanced
+            # parens broke the build step's shell script (syntax error).
+            BASE_VERSION=$(tr -d '[:space:]' < PACKAGE_VERSION 2>/dev/null || true)
+            # The value flows into run: via ${{ }} — only allow a safe charset.
+            if ! printf '%s' "$BASE_VERSION" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]*$'; then
+              BASE_VERSION="0.1.0"
+            fi
           else
             CHANNEL="dev"
             BASE_VERSION="0.1.0"
