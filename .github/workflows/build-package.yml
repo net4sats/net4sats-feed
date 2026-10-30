@@ -30,7 +30,8 @@ jobs:
             # it yielded "$(shell sh \"$(PKG_MAKEFILE_DIR", whose unbalanced
             # parens broke the build step's shell script (syntax error).
             BASE_VERSION=$(tr -d '[:space:]' < PACKAGE_VERSION 2>/dev/null || true)
-            # The value flows into run: via ${{ }} — only allow a safe charset.
+            # The value flows into run: via GitHub expression interpolation
+            # — only allow a safe charset.
             if ! printf '%s' "$BASE_VERSION" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]*$'; then
               BASE_VERSION="0.1.0"
             fi
